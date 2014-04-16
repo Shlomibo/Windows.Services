@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
-using Windows.Services.Interop;
+using Utilities.Windows.Services.Interop;
 
-namespace Windows.Services
+namespace Utilities.Windows.Services
 {
 	partial class Service
 	{

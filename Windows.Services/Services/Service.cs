@@ -6,10 +6,10 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.Interop;
-using Windows.Services.Interop;
+using Utilities.Windows.Interop;
+using Utilities.Windows.Services.Interop;
 
-namespace Windows.Services
+namespace Utilities.Windows.Services
 {
 	/// <summary>
 	/// Represents a windows service.

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Windows.Services
+namespace Utilities.Windows.Services
 {
 	/// <summary>
 	/// Throws an exception for a Win32 service error code.

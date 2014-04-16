@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Utilities;
 
-namespace Windows.Services
+namespace Utilities.Windows.Services
 {
 	/// <summary>
 	/// Represent object that can wait for notifications to accure

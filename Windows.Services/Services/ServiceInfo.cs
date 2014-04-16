@@ -4,10 +4,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Windows.Services.Interop;
-using Utilities.Extansions;
+using Utilities.Windows.Services.Interop;
+using Utilities.Extansions.Object;
 
-namespace Windows.Services
+namespace Utilities.Windows.Services
 {
 	/// <summary>
 	/// Contains the name of a service in a service control manager database and information about the service.

@@ -4,9 +4,9 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using Windows.Services.Interop;
+using Utilities.Windows.Services.Interop;
 
-namespace Windows.Services.XPCompatibility
+namespace Utilities.Windows.Services.XPCompatibility
 {
 	/// <summary>
 	/// A lock on SCM database.

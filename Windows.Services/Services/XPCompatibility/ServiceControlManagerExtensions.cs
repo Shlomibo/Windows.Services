@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Windows.Services.XPCompatibility
+namespace Utilities.Windows.Services.XPCompatibility
 {
 	/// <summary>
 	/// Provides extension methods to ServiceControlManager.

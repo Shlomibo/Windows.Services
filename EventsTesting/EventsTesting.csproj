@@ -51,9 +51,6 @@
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
-    <Reference Include="WindowsUtils">
-      <HintPath>..\..\WindowsUtils\WindowsUtils\bin\Release\WindowsUtils.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
@@ -103,9 +100,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Windows.Services\Windows.Services.csproj">
+    <ProjectReference Include="..\Windows.Services\Utilities.Windows.Services.csproj">
       <Project>{d3a93201-7c8c-4db0-8dd9-721e81fdae0d}</Project>
-      <Name>Windows.Services</Name>
+      <Name>Utilities.Windows.Services</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

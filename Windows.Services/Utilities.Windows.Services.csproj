@@ -7,8 +7,8 @@
     <ProjectGuid>{D3A93201-7C8C-4DB0-8DD9-721E81FDAE0D}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Windows.Services</RootNamespace>
-    <AssemblyName>Windows.Services</AssemblyName>
+    <RootNamespace>Utilities.Windows</RootNamespace>
+    <AssemblyName>Utilities.Windows.Services</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -43,7 +43,7 @@
       <HintPath>..\..\Utilities\Utilities\bin\Release\Utilities.dll</HintPath>
     </Reference>
     <Reference Include="WindowsUtils">
-      <HintPath>..\..\WindowsUtils\WindowsUtils\bin\Release\WindowsUtils.dll</HintPath>
+      <HintPath>..\..\WindowsUtils\WindowsUtils\bin\Debug\WindowsUtils.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
