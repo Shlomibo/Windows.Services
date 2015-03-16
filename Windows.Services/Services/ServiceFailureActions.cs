@@ -16,7 +16,7 @@ namespace Windows.Services
 	/// <remarks>
 	/// A service is considered failed when it terminates without reporting a status of Stopped to the service controller.
 	/// </remarks>
-	public class FailureActions
+	public sealed class FailureActions
 	{
 		#region Fields
 
@@ -314,19 +314,19 @@ namespace Windows.Services
 	/// <summary>
 	/// Represents an action that the service control manager can perform.
 	/// </summary>
-	public class ServiceControlAction
+	public sealed class ServiceControlAction
 	{
 		#region Propeties
 
 		/// <summary>
 		/// Gets the action to be performed.
 		/// </summary>
-		public ServiceControlActionType Action { get; private set; }
+		public ServiceControlActionType Action { get; }
 
 		/// <summary>
 		/// Gets the time to wait before performing the specified action, in milliseconds.
 		/// </summary>
-		public int Delay { get; private set; }
+		public int Delay { get; }
 		#endregion
 
 		#region Ctor

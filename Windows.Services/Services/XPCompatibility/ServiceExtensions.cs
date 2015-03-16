@@ -11,6 +11,7 @@ namespace Windows.Services.XPCompatibility
 	/// <summary>
 	/// Provides extension methods for Service
 	/// </summary>
+	[Obsolete("WinXp is no longer supported", true)]
 	public static class ServiceExtensions
 	{
 		#region Consts
@@ -71,10 +72,8 @@ namespace Windows.Services.XPCompatibility
 			this Service service,
 			CancellationToken token,
 			TimeSpan timeout,
-			params State[] states)
-		{
-			return WaitForStatesAsync(service, token, timeout.Milliseconds, states);
-		}
+			params State[] states) =>
+			WaitForStatesAsync(service, token, timeout.Milliseconds, states);
 
 		/// <summary>
 		/// Asynchronically waits for service to change state.
@@ -90,10 +89,8 @@ namespace Windows.Services.XPCompatibility
 		public static Task<bool> WaitForStatesAsync(
 			this Service service,
 			CancellationToken token,
-			params State[] states)
-		{
-			return WaitForStatesAsync(service, token, Timeout.Infinite, states);
-		}
+			params State[] states) =>
+			WaitForStatesAsync(service, token, Timeout.Infinite, states);
 
 		/// <summary>
 		/// Asynchronically waits for service to change state.
@@ -109,10 +106,8 @@ namespace Windows.Services.XPCompatibility
 		public static Task<bool> WaitForStatesAsync(
 			this Service service,
 			TimeSpan timeout,
-			params State[] states)
-		{
-			return WaitForStatesAsync(service, CancellationToken.None, timeout, states);
-		}
+			params State[] states) =>
+			WaitForStatesAsync(service, CancellationToken.None, timeout, states);
 
 		/// <summary>
 		/// Asynchronically waits for service to change state.
@@ -128,10 +123,8 @@ namespace Windows.Services.XPCompatibility
 		public static Task<bool> WaitForStatesAsync(
 			this Service service,
 			int millisecondsTimeout,
-			params State[] states)
-		{
-			return WaitForStatesAsync(service, CancellationToken.None, millisecondsTimeout, states);
-		}
+			params State[] states) =>
+			WaitForStatesAsync(service, CancellationToken.None, millisecondsTimeout, states);
 
 		/// <summary>
 		/// Asynchronically waits for service to change state.
@@ -145,10 +138,8 @@ namespace Windows.Services.XPCompatibility
 		/// </remarks>
 		public static async Task WaitForStatesAsync(
 			this Service service,
-			params State[] states)
-		{
+			params State[] states) =>
 			await WaitForStatesAsync(service, Timeout.Infinite, states);
-		}
 
 		/// <summary>
 		/// Blocks the calling thread until the service state is changed to the given state.
@@ -185,10 +176,8 @@ namespace Windows.Services.XPCompatibility
 		/// This method is deprecated on Windows Vista and above.
 		/// It is recommended to to use WaitForNotification instead.
 		/// </remarks>
-		public static void WaitForStates(this Service service, params State[] states)
-		{
+		public static void WaitForStates(this Service service, params State[] states) =>
 			WaitForStates(service, Timeout.Infinite, states);
-		}
 
 		/// <summary>
 		/// Blocks the calling thread until the service state is changed to the given state.
@@ -203,19 +192,15 @@ namespace Windows.Services.XPCompatibility
 		/// This method is deprecated on Windows Vista and above.
 		/// It is recommended to to use WaitForNotification instead.
 		/// </remarks>
-		public static bool WaitForStates(this Service service, TimeSpan timeout, params State[] states)
-		{
-			return WaitForStates(service, timeout.Milliseconds, states);
-		}
+		public static bool WaitForStates(this Service service, TimeSpan timeout, params State[] states) =>
+			WaitForStates(service, timeout.Milliseconds, states);
 
 		/// <summary>
 		/// Stops the service.
 		/// </summary>
 		/// <returns>The reported status of the service after the control was processed.</returns>
-		public static ServiceStatus Stop(this Service service)
-		{
-			return service.SendControl(ControlCode.Stop);
-		}
+		public static ServiceStatus Stop(this Service service) =>
+			service.SendControl(ControlCode.Stop);
 		#endregion
 	}
 }

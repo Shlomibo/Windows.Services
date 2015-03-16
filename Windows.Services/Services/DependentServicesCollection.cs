@@ -14,7 +14,7 @@ namespace Windows.Services
 		/// <summary>
 		/// A collection of dependent services' status
 		/// </summary>
-		public class DependentServicesCollection : ServiceCollectionBase
+		public sealed class DependentServicesCollection : ServiceCollectionBase
 		{
 			#region Fields
 
@@ -49,10 +49,8 @@ namespace Windows.Services
 			protected override IEnumerable<ServiceInfo> QueryServicesInumerator(
 				ServiceType type,
 				StateQuery state,
-				string groupName)
-			{
-				return new Enumerator(this, state);
-			}
+				string groupName) =>
+				new Enumerator(this, state);
 			#endregion
 
 			#region Enumerator
@@ -63,10 +61,10 @@ namespace Windows.Services
 
 				private static readonly Dictionary<int, string> MSGS_ENUMERATION = new Dictionary<int, string>
 				{
-					{ Win32API.ERROR_ACCESS_DENIED, 
-						"The handle does not have the SERVICE_ENUMERATE_DEPENDENTS access right." },
-					{ Win32API.ERROR_INVALID_HANDLE, "The specified handle is invalid." },
-					{ Win32API.ERROR_INVALID_PARAMETER, "A parameter that was specified is invalid." },
+					[Win32API.ERROR_ACCESS_DENIED] = 
+						"The handle does not have the SERVICE_ENUMERATE_DEPENDENTS access right.",
+					[Win32API.ERROR_INVALID_HANDLE] = "The specified handle is invalid.",
+					[Win32API.ERROR_INVALID_PARAMETER] = "A parameter that was specified is invalid.",
 				};
 				#endregion
 
@@ -118,7 +116,8 @@ namespace Windows.Services
 						{
 							this.lastError = Marshal.GetLastWin32Error();
 						}
-					} while (lastError == Win32API.ERROR_MORE_DATA);
+					}
+					while (lastError == Win32API.ERROR_MORE_DATA);
 
 					if (lastError != Win32API.ERROR_SUCCESS)
 					{
@@ -129,14 +128,9 @@ namespace Windows.Services
 
 				#region Properties
 
-				public override ServiceInfo Current
-				{
-					get
-					{
-						ThrowIfDisposed();
-						return new ServiceInfo(this.collection.service.Scm, this.pESS[this.index]);
-					}
-				}
+				public override ServiceInfo Current =>
+					GetOrThrowIfDisposed(() =>
+						new ServiceInfo(this.collection.service.Scm, this.pESS[this.index]));
 				#endregion
 
 				#region Methods
@@ -153,8 +147,6 @@ namespace Windows.Services
 				}
 				#endregion
 			}
-
-
 			#endregion
 		}
 	}

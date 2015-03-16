@@ -11,26 +11,24 @@ namespace Windows.Services.XPCompatibility
 	/// <summary>
 	/// A lock on SCM database.
 	/// </summary>
-	public class ServiceControlLock : IDisposable
+	[Obsolete("WinXp is no longer supported", true)]
+	public sealed class ServiceControlLock : IDisposable
 	{
 #pragma warning disable 612, 618
 
-		#region consts
-
-		private static readonly Dictionary<int, string> MSGS_LOCK_ERRORS = new Dictionary<int, string>()
-		{
-			{ Win32API.ERROR_ACCESS_DENIED, "The handle does not have the SC_MANAGER_LOCK access right." },
-			{ Win32API.ERROR_INVALID_HANDLE, "The specified handle is not valid." },
-			{ Win32API.ERROR_SERVICE_DATABASE_LOCKED, "The database is locked." },
-		};
-
-		private static readonly Dictionary<int, string> MSGS_UNLOCK_ERRORS = new Dictionary<int, string>()
-		{
-			{ Win32API.ERROR_INVALID_SERVICE_LOCK, "The specified lock is invalid." },
-		};
-		#endregion
-
 		#region Fields
+
+		private static readonly Dictionary<int, string> lockErrorMessages = new Dictionary<int, string>()
+		{
+			[Win32API.ERROR_ACCESS_DENIED] = "The handle does not have the SC_MANAGER_LOCK access right.",
+			[Win32API.ERROR_INVALID_HANDLE] = "The specified handle is not valid.",
+			[Win32API.ERROR_SERVICE_DATABASE_LOCKED] = "The database is locked.",
+		};
+
+		private static readonly Dictionary<int, string> unlockErrorMessages = new Dictionary<int, string>()
+		{
+			[Win32API.ERROR_INVALID_SERVICE_LOCK] = "The specified lock is invalid.",
+		};
 
 		private IntPtr scLock;
 		#endregion
@@ -55,7 +53,7 @@ namespace Windows.Services.XPCompatibility
 
 			if (this.scLock == IntPtr.Zero)
 			{
-				throw ServiceException.Create(MSGS_LOCK_ERRORS, Marshal.GetLastWin32Error());
+				throw ServiceException.Create(lockErrorMessages, Marshal.GetLastWin32Error());
 			}
 		}
 
@@ -88,14 +86,9 @@ namespace Windows.Services.XPCompatibility
 
 				do
 				{
-					if (Win32API.QueryServiceLockStatus(scm.Handle, pQSLS, (uint)allocated, out needed))
-					{
-						lastError = Win32API.ERROR_SUCCESS;
-					}
-					else
-					{
-						lastError = Marshal.GetLastWin32Error();
-					}
+					lastError = Win32API.QueryServiceLockStatus(scm.Handle, pQSLS, (uint)allocated, out needed)
+						? Win32API.ERROR_SUCCESS
+						: Marshal.GetLastWin32Error();
 
 					if (lastError == Win32API.ERROR_INSUFFICIENT_BUFFER)
 					{
@@ -112,10 +105,8 @@ namespace Windows.Services.XPCompatibility
 			}
 		}
 
-		void IDisposable.Dispose()
-		{
+		void IDisposable.Dispose() =>
 			Unlock();
-		}
 
 		/// <summary>
 		/// Release the lock, and free resources aquired by the lock.
@@ -130,7 +121,7 @@ namespace Windows.Services.XPCompatibility
 		/// Release resources
 		/// </summary>
 		/// <param name="disposing">Value indicates if the object was disposed correctly.</param>
-		protected virtual void Dispose(bool disposing)
+		private void Dispose(bool disposing)
 		{
 			if (!this.IsUnlocked)
 			{
@@ -138,7 +129,7 @@ namespace Windows.Services.XPCompatibility
 
 				if (!Win32API.UnlockServiceDatabase(this.scLock) && disposing)
 				{
-					throw ServiceException.Create(MSGS_UNLOCK_ERRORS, Marshal.GetLastWin32Error());
+					throw ServiceException.Create(unlockErrorMessages, Marshal.GetLastWin32Error());
 				} 
 			}
 		} 

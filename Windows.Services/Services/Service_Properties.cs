@@ -715,7 +715,7 @@ namespace Windows.Services
 								(uint)sizeof(ServiceStatusProcess),
 								out stub))
 					{
-						throw ServiceException.Create(MSGS_SERVICE_STATUS, Marshal.GetLastWin32Error());
+						throw ServiceException.Create(serviceStatusMessages, Marshal.GetLastWin32Error());
 					}
 
 					return new ServiceStatus(ssp); 

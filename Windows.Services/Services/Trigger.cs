@@ -12,29 +12,29 @@ namespace Windows.Services
 	/// <summary>
 	/// Represents service's trigger
 	/// </summary>
-	public class Trigger
+	public sealed class Trigger
 	{
 		#region Properties
 
 		/// <summary>
 		/// Gets the trigger event type.
 		/// </summary>
-		public TriggerType Type { get; private set; }
+		public TriggerType Type { get; }
 
 		/// <summary>
 		/// Gets the action to take when the specified trigger event occurs.
 		/// </summary>
-		public TriggerAction Action { get; private set; }
+		public TriggerAction Action { get; }
 
 		/// <summary>
 		/// Gets the Guid that identifies the trigger event subtype.
 		/// </summary>
-		public Guid Subtype { get; private set; }
+		public Guid Subtype { get; }
 
 		/// <summary>
 		/// Gets a collection of items that contain trigger-specific data.
 		/// </summary>
-		public ReadOnlyCollection<TriggerData> DataItems { get; private set; }
+		public ReadOnlyCollection<TriggerData> DataItems { get; }
 		#endregion
 
 		#region Ctor
@@ -56,9 +56,9 @@ namespace Windows.Services
 			{
 				this.DataItems = (ReadOnlyCollection<TriggerData>)dataItems;
 			}
-			else if (dataItems is TriggerData[])
+			else if (dataItems is IList<TriggerData>)
 			{
-				this.DataItems = Array.AsReadOnly((dataItems as TriggerData[]));
+				this.DataItems = new ReadOnlyCollection<TriggerData>(dataItems as IList<TriggerData>);
 			}
 			else if (dataItems != null)
 			{
@@ -93,6 +93,11 @@ namespace Windows.Services
 
 			unmanaged.dataItems = (TriggerSpecificDataItem*)Marshal.AllocHGlobal(
 				sizeof(TriggerSpecificDataItem) * this.DataItems.Count);
+
+			if (unmanaged.dataItems == null)
+			{
+				throw new OutOfMemoryException();
+			}
 
 			for (int i = 0; i < this.DataItems.Count; i++)
 			{

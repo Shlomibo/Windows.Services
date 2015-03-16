@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Windows.Services.Interop;
 using Utilities.Extansions;
+using static Utilities.Extansions.Object.ObjectExtansions;
 
 namespace Windows.Services
 {
@@ -35,29 +36,29 @@ namespace Windows.Services
 		/// <summary>
 		/// Gets the type of service.
 		/// </summary>
-		public ServiceType Type { get; private set; }
+		public ServiceType Type { get; }
 
 		/// <summary>
 		/// Gets the current state of the service.
 		/// </summary>
-		public State State { get; private set; }
+		public State State { get; }
 		
 		/// <summary>
 		/// Gets the control codes the service accepts and processes in its handler function. 
 		/// A user interface process can control a service by specifying a control command in the SendControl function. 
 		/// By default, all services accept the Interrogate value.
 		/// </summary>
-		public AcceptedControls AcceptedControls { get; private set; }
+		public AcceptedControls AcceptedControls { get; }
 
 		/// <summary>
 		/// Gets the process identifier of the service.
 		/// </summary>
-		public int ProcessId { get; private set; }
+		public int ProcessId { get; } = NO_PROC_ID;
 
 		/// <summary>
 		/// Gets flags of the service's process.
 		/// </summary>
-		public ProcessFlags ServiceProcFlags { get; private set; }
+		public ProcessFlags ServiceProcFlags { get; } = ProcessFlags.None;
 
 		/// <summary>
 		/// Gets the error code that the service uses to report an error that occurs when it is starting or stopping. 
@@ -65,14 +66,14 @@ namespace Windows.Services
 		/// ERROR_SERVICE_SPECIFIC_ERROR to indicate that the ServiceSpecificExitCode property contains the error code. 
 		/// The service should set this value to NO_ERROR when it is running and when it terminates normally.
 		/// </summary>
-		public int Win32ExitCode { get; private set; }
+		public int Win32ExitCode { get; }
 
 		/// <summary>
 		/// Gets the service-specific error code that the service returns when an error occurs while 
 		/// the service is starting or stopping. 
 		/// This value is null unless the Win32ExitCode property is set to ERROR_SERVICE_SPECIFIC_ERROR.
 		/// </summary>
-		public int? ServiceSpecificExitCode { get; private set; }
+		public int? ServiceSpecificExitCode { get; }
 
 		/// <summary>
 		/// Gets the check-point value that the service increments periodically to report its progress during a lengthy start,
@@ -84,7 +85,7 @@ namespace Windows.Services
 		/// This value is not valid and should be zero when the service does not have a start, 
 		/// stop, pause, or continue operation pending.
 		/// </summary>
-		public int CheckPoint { get; private set; }
+		public int CheckPoint { get; }
 		
 		/// <summary>
 		/// Get the estimated time required for a pending start, stop, pause, or continue operation, in milliseconds. 
@@ -98,7 +99,7 @@ namespace Windows.Services
 		/// the service control manager cannot terminate the service application because 
 		/// it would have to terminate the other services sharing the process as well.
 		/// </summary>
-		public int WaitHint { get; private set; }
+		public int WaitHint { get; }
 		#endregion
 
 		#region Ctor
@@ -108,8 +109,6 @@ namespace Windows.Services
 			this.Type = ss.type;
 			this.State = ss.state;
 			this.AcceptedControls = ss.acceptedControls;
-			this.ProcessId = NO_PROC_ID;
-			this.ServiceProcFlags = ProcessFlags.None;
 			this.Win32ExitCode = (int)ss.win32ExitCode;
 			this.ServiceSpecificExitCode = ss.win32ExitCode == ERROR_SERVICE_SPECIFIC_ERROR
 				? (int?)ss.specificExitCode
@@ -140,31 +139,27 @@ namespace Windows.Services
 		/// Returns Process instance to the service's process.
 		/// </summary>
 		/// <returns>A Process instance to the service's process.</returns>
-		public Process GetProcess()
-		{
-			return this.ProcessId != NO_PROC_ID
+		public Process GetProcess() =>
+			this.ProcessId != NO_PROC_ID
 				? Process.GetProcessById(this.ProcessId)
 				: null;
-		}
 
 		/// <summary>
 		/// Indicates whether the current object is equal to another object of the same type.
 		/// </summary>
 		/// <param name="other">An object to compare with this object.</param>
 		/// <returns>true if the current object is equal to the other parameter; otherwise, false.</returns>
-		public bool Equals(ServiceStatus other)
-		{
-			return (other != null) &&
-				(this.Type == other.Type) &&
-				(this.State == other.State) &&
-				(this.AcceptedControls == other.AcceptedControls) &&
-				(this.ProcessId == other.ProcessId) &&
-				(this.ServiceProcFlags == other.ServiceProcFlags) &&
-				(this.Win32ExitCode == other.Win32ExitCode) &&
-				(this.ServiceSpecificExitCode == other.ServiceSpecificExitCode) &&
-				(this.CheckPoint == other.CheckPoint) &&
-				(this.WaitHint == other.WaitHint);
-		}
+		public bool Equals(ServiceStatus other) =>
+			(other != null) &&
+			(this.Type == other.Type) &&
+			(this.State == other.State) &&
+			(this.AcceptedControls == other.AcceptedControls) &&
+			(this.ProcessId == other.ProcessId) &&
+			(this.ServiceProcFlags == other.ServiceProcFlags) &&
+			(this.Win32ExitCode == other.Win32ExitCode) &&
+			(this.ServiceSpecificExitCode == other.ServiceSpecificExitCode) &&
+			(this.CheckPoint == other.CheckPoint) &&
+			(this.WaitHint == other.WaitHint);
 
 		/// <summary>
 		/// Determines whether the specified object is equal to the current object.
@@ -193,9 +188,8 @@ namespace Windows.Services
 		/// Serves as the default hash function.
 		/// </summary>
 		/// <returns>A hash code for the current object.</returns>
-		public override int GetHashCode()
-		{
-			return ObjectExtansions.CreateHashCode(
+		public override int GetHashCode() =>
+			CreateHashCode(
 				this.Type,
 				this.State,
 				this.AcceptedControls,
@@ -205,7 +199,6 @@ namespace Windows.Services
 				this.ServiceSpecificExitCode,
 				this.CheckPoint,
 				this.WaitHint);
-		}
 		#endregion
 
 		#region Operators
@@ -217,7 +210,7 @@ namespace Windows.Services
 			{
 				return true;
 			}
-			else if (object.ReferenceEquals(left, null) || object.ReferenceEquals(right, null))
+			else if (object.ReferenceEquals(left, null))
 			{
 				return false;
 			}
@@ -228,10 +221,8 @@ namespace Windows.Services
 		}
 
 		/// <summary></summary><param name="left"></param><param name="right"></param><returns></returns>
-		public static bool operator !=(ServiceStatus left, ServiceStatus right)
-		{
-			return !(left == right);
-		}
+		public static bool operator !=(ServiceStatus left, ServiceStatus right) =>
+			!(left == right);
 		#endregion
 	}
 }

@@ -18,13 +18,26 @@ namespace Windows.Services
 		/// <summary>
 		/// Gets the data type of the trigger-specific data.
 		/// </summary>
-		public DataItemType DataType { get; protected set; }
+		public DataItemType DataType { get; }
 
 		/// <summary>
 		/// Gets the trigger-specific data for the service trigger event.
 		/// The trigger-specific data depends on the trigger event type
 		/// </summary>
-		public abstract object Data { get; } 
+		public abstract object Data { get; }
+		#endregion
+
+		#region Ctor
+
+		internal TriggerData (DataItemType dataType)
+		{
+			if (!Enum.IsDefined(typeof(DataItemType), dataType))
+			{
+				throw new ArgumentException(nameof(dataType));
+			}
+
+			this.DataType = dataType;
+		}
 		#endregion
 
 		#region Methods
@@ -101,22 +114,19 @@ namespace Windows.Services
 	/// <summary>
 	/// Contains trigger-specific string data for a service trigger event.
 	/// </summary>
-	public class TriggerStringData : TriggerData
+	public sealed class TriggerStringData : TriggerData
 	{
 		#region Properties
 
 		/// <summary>
 		/// Gets the string data for a service trigger event.
 		/// </summary>
-		public string StringData { get; private set; }
+		public string StringData { get; }
 
 		/// <summary>
 		/// Gets the trigger-specific data for the service trigger event.
 		/// </summary>
-		public override object Data
-		{
-			get { return this.StringData; }
-		} 
+		public override object Data => this.StringData;
 		#endregion
 
 		#region Ctor
@@ -126,8 +136,8 @@ namespace Windows.Services
 		/// </summary>
 		/// <param name="data">The string data for a service trigger event.</param>
 		public TriggerStringData(string data)
+			: base(DataItemType.String)
 		{
-			this.DataType = DataItemType.String;
 			this.StringData = data;
 		} 
 		#endregion
@@ -136,9 +146,18 @@ namespace Windows.Services
 
 		internal override unsafe void ToUnmanaged(ref TriggerSpecificDataItem unmanaged)
 		{
-			unmanaged.bytesCount = (uint)(sizeof(char) * (this.StringData.Length + 1));
-			unmanaged.data = (byte*)Marshal.StringToHGlobalUni(this.StringData);
 			unmanaged.type = DataItemType.String;
+
+			if (this.StringData == null)
+			{
+				unmanaged.bytesCount = 0;
+				unmanaged.data = null;
+			}
+			else
+			{
+				unmanaged.bytesCount = (uint)(sizeof(char) * (this.StringData.Length + 1));
+				unmanaged.data = (byte*)Marshal.StringToHGlobalUni(this.StringData);
+			}
 		}
 		#endregion
 	}
@@ -146,22 +165,19 @@ namespace Windows.Services
 	/// <summary>
 	/// Contains trigger-specific binary data for a service trigger event.
 	/// </summary>
-	public class TriggerBinaryData : TriggerData
+	public sealed class TriggerBinaryData : TriggerData
 	{
 		#region Properties
 
 		/// <summary>
 		/// Gets the binary data for a service trigger event.
 		/// </summary>
-		public byte[] BinaryData { get; private set; }
+		public byte[] BinaryData { get; }
 
 		/// <summary>
 		/// Gets the trigger-specific data for the service trigger event.
 		/// </summary>
-		public override object Data
-		{
-			get { return this.BinaryData; }
-		}
+		public override object Data => this.BinaryData;
 		#endregion
 
 		#region Ctor
@@ -171,8 +187,8 @@ namespace Windows.Services
 		/// </summary>
 		/// <param name="data">The binary data for a service trigger event.</param>
 		public TriggerBinaryData(byte[] data)
+			: base(DataItemType.Binary)
 		{
-			this.DataType = DataItemType.Binary;
 			this.BinaryData = data;
 		}
 		#endregion
@@ -181,10 +197,19 @@ namespace Windows.Services
 
 		internal override unsafe void ToUnmanaged(ref TriggerSpecificDataItem unmanaged)
 		{
-			unmanaged.bytesCount = (uint)this.BinaryData.Length;
-			unmanaged.data = (byte*)Marshal.AllocHGlobal(this.BinaryData.Length);
-			Marshal.Copy(this.BinaryData, 0, (IntPtr)unmanaged.data, this.BinaryData.Length);
 			unmanaged.type = DataItemType.Binary;
+
+			if (this.BinaryData == null)
+			{
+				unmanaged.bytesCount = 0;
+				unmanaged.data = null;
+			}
+			else
+			{
+				unmanaged.bytesCount = (uint)this.BinaryData.Length;
+				unmanaged.data = (byte*)Marshal.AllocHGlobal(this.BinaryData.Length);
+				Marshal.Copy(this.BinaryData, 0, (IntPtr)unmanaged.data, this.BinaryData.Length);
+			}
 		}
 		#endregion
 	}

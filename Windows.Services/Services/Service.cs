@@ -14,7 +14,7 @@ namespace Windows.Services
 	/// <summary>
 	/// Represents a windows service.
 	/// </summary>
-	public partial class Service : IDisposable, INotificationWaiter
+	public sealed partial class Service : IDisposable, INotificationWaiter
 	{
 		#region Consts
 
@@ -52,17 +52,17 @@ namespace Windows.Services
 
 		#region Event handlers
 
-		private Dictionary<Notification, EventHandler<ServiceEventArgs>> handlers =
+		private Dictionary<Notification, EventHandler<ServiceEventArgs>> handlers = 
 			new Dictionary<Notification, EventHandler<ServiceEventArgs>>()
 			{
-				{ Notification.ContinuePending, (s, e) => { } },
-				{ Notification.DeletePending, (s, e) => { } },
-				{ Notification.PausePending, (s, e) => { } },
-				{ Notification.Paused, (s, e) => { } },
-				{ Notification.Running, (s, e) => { } },
-				{ Notification.StartPending, (s, e) => { } },
-				{ Notification.StopPending, (s, e) => { } },
-				{ Notification.Stopped, (s, e) => { } },
+				[Notification.ContinuePending] = (s, e) => { },
+				[Notification.DeletePending] = (s, e) => { },
+				[Notification.PausePending] = (s, e) => { },
+				[Notification.Paused] = (s, e) => { },
+				[Notification.Running] = (s, e) => { },
+				[Notification.StartPending] = (s, e) => { },
+				[Notification.StopPending] = (s, e) => { },
+				[Notification.Stopped] = (s, e) => { },
 			};
 		#endregion
 
@@ -202,7 +202,7 @@ namespace Windows.Services
 		/// </summary>
 		/// <param name="event">The event to fire.</param>
 		/// <param name="status">Service status for the event.</param>
-		protected void OnEvent(Notification @event, ServiceStatus status)
+		private void OnEvent(Notification @event, ServiceStatus status)
 		{
 			this.handlers[@event](this, new ServiceEventArgs(this, status));
 		}
@@ -258,14 +258,14 @@ namespace Windows.Services
 		{
 			if (scm == null)
 			{
-				throw new ArgumentNullException("scm");
+				throw new ArgumentNullException(nameof(scm));
 			}
 
 			if ((handle == null) && (name == null) && (displayName == null))
 			{
 				throw new ArgumentNullException(
-					"handle, name, displayName",
-					"'handle', 'name' and 'displayName' cannot be all null");
+					$"{nameof(handle)}, {nameof(name)}, {nameof(displayName)}",
+					$"'{nameof(handle)}', '{nameof(name)}' and '{nameof(displayName)}' cannot be all null");
 			}
 
 			if (handle != null)
@@ -400,12 +400,12 @@ namespace Windows.Services
 		/// <summary>
 		/// Gets the status of the service when the event fires.
 		/// </summary>
-		public ServiceStatus Status { get; private set; }
+		public ServiceStatus Status { get; }
 
 		/// <summary>
 		/// Gets the service that fired the event.
 		/// </summary>
-		public Service Service { get; private set; }
+		public Service Service { get; }
 		#endregion
 
 		#region Ctor

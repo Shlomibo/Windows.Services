@@ -17,38 +17,39 @@ namespace Windows.Services
 	/// <summary>
 	/// Represents a service control manager database.
 	/// </summary>
-	public partial class ServiceControlManager : IDisposable, INotificationWaiter
+	public sealed partial class ServiceControlManager : IDisposable, INotificationWaiter
 	{
 		#region Consts
 
 		private const ScmAccessRights DEFAULT_ACCESS = ScmAccessRights.GenericRead;
 		private const string DESFAULT_MACHINE_NAME = "localhost";
 		private const string CREATE_PREFIX = "/";
-
-		private static readonly Dictionary<int, string> MSGS_CTOR = new Dictionary<int, string>()
-		{
-			{ Win32API.ERROR_ACCESS_DENIED, "The requested access was denied." },
-			{ Win32API.ERROR_DATABASE_DOES_NOT_EXIST, "The specified database does not exist." },
-		};
-
-		private static readonly Dictionary<int, string> MSGS_NTFY_BOOT_CNFG_STTS = new Dictionary<int, string>()
-		{
-			{ Win32API.ERROR_ACCESS_DENIED, "The user does not have permission to perform this operation. " +
-				"Only the system and members of the Administrator's group can do so." },
-		};
-
-		private static readonly Dictionary<int, string> MSGS_OPEN_SVC = new Dictionary<int, string>()
-		{
-			{ Win32API.ERROR_ACCESS_DENIED, "The handle does not have access to the service." },
-			{ Win32API.ERROR_INVALID_HANDLE, "The specified handle is invalid." },
-			{ Win32API.ERROR_INVALID_NAME, "The specified service name is invalid." },
-			{ Win32API.ERROR_SERVICE_DOES_NOT_EXIST, "The specified service does not exist." },
-		};
 		#endregion
 
 		#region Fields
 
-		private static WeakReference<ServiceControlManager> current = new WeakReference<ServiceControlManager>(null);
+		private static readonly Dictionary<int, string> creationMessages = new Dictionary<int, string>()
+		{
+			[Win32API.ERROR_ACCESS_DENIED] = "The requested access was denied.",
+			[Win32API.ERROR_DATABASE_DOES_NOT_EXIST] = "The specified database does not exist.",
+		};
+
+		private static readonly Dictionary<int, string> notifyBootConfigStatusMessages = new Dictionary<int, string>()
+		{
+			[Win32API.ERROR_ACCESS_DENIED] = 
+				"The user does not have permission to perform this operation. " +
+				"Only the system and members of the Administrator's group can do so.",
+		};
+
+		private static readonly Dictionary<int, string> openServiceMessages = new Dictionary<int, string>()
+		{
+			[Win32API.ERROR_ACCESS_DENIED] = "The handle does not have access to the service.",
+			[Win32API.ERROR_INVALID_HANDLE] = "The specified handle is invalid.",
+			[Win32API.ERROR_INVALID_NAME] = "The specified service name is invalid.",
+			[Win32API.ERROR_SERVICE_DOES_NOT_EXIST] = "The specified service does not exist.",
+		};
+
+		private static readonly WeakReference<ServiceControlManager> current = new WeakReference<ServiceControlManager>(null);
 		private ServiceEvents events;
 		#endregion
 
@@ -57,12 +58,12 @@ namespace Windows.Services
 		/// <summary>
 		/// Gets the handle to the service control manager database.
 		/// </summary>
-		public IntPtr Handle { get; private set; }
+		public IntPtr Handle { get; }
 
 		/// <summary>
 		/// Gets the access rights used to open the SCM.
 		/// </summary>
-		public AccessRights AccessRights { get; private set; }
+		public AccessRights AccessRights { get; }
 
 		/// <summary>
 		/// Gets value indicates if this object has disposed.
@@ -92,12 +93,12 @@ namespace Windows.Services
 		/// <summary>
 		/// Gets the name of the machine in which the current SCM resides.
 		/// </summary>
-		public string MachineName { get; private set; }
+		public string MachineName { get; }
 
 		/// <summary>
 		/// Gets collection of services' statuses that in the current SCM database.
 		/// </summary>
-		public ServiceCollection Services { get; private set; }
+		public ServiceCollection Services { get; }
 		#endregion
 
 		#region Delegates
@@ -116,8 +117,8 @@ namespace Windows.Services
 		private Dictionary<Notification, EventHandler<ServiceControlEventArgs>> handlers =
 			new Dictionary<Notification, EventHandler<ServiceControlEventArgs>>()
 			{
-				{ Notification.Created, (s, e) => { } },
-				{ Notification.Deleted, (s, e) => { } },
+				[Notification.Created] = (s, e) => { },
+				[Notification.Deleted] = (s, e) => { },
 			};
 		#endregion
 
@@ -167,7 +168,7 @@ namespace Windows.Services
 
 			if (this.Handle == IntPtr.Zero)
 			{
-				throw ServiceException.Create(MSGS_CTOR, Marshal.GetLastWin32Error());
+				throw ServiceException.Create(creationMessages, Marshal.GetLastWin32Error());
 			}
 
 			if (string.IsNullOrEmpty(machineName))
@@ -177,6 +178,7 @@ namespace Windows.Services
 
 			this.MachineName = machineName;
 			this.Services = new ServiceCollection(this);
+			this.AccessRights = (AccessRights)desiredAccess;
 		}
 
 		/// <summary>
@@ -246,10 +248,8 @@ namespace Windows.Services
 		/// true if one of notification was raised before the timeout elapsed;
 		/// otherwise false.
 		/// </returns>
-		public bool WaitForNotification(Notification waitFor, TimeSpan timeout, out Notification triggered)
-		{
-			return WaitForNotification(waitFor, timeout.Milliseconds, out triggered);
-		}
+		public bool WaitForNotification(Notification waitFor, TimeSpan timeout, out Notification triggered) =>
+			WaitForNotification(waitFor, timeout.Milliseconds, out triggered);
 
 		/// <summary>
 		/// Blocks the thread until wanted notification is raised.
@@ -311,7 +311,7 @@ namespace Windows.Services
 		/// Fire the ServiceCreates event
 		/// </summary>
 		/// <param name="serviceName">The name of the service that has been created</param>
-		protected void OnServiceCreated(string serviceName)
+		private void OnServiceCreated(string serviceName)
 		{
 			this.handlers[Notification.Created](this, new ServiceControlEventArgs(serviceName));
 		}
@@ -320,7 +320,7 @@ namespace Windows.Services
 		/// Fire the ServiceDeleted event
 		/// </summary>
 		/// <param name="serviceName">The name of the service that has been deleted</param>
-		protected void OnServiceDeleted(string serviceName)
+		private void OnServiceDeleted(string serviceName)
 		{
 			this.handlers[Notification.Deleted](this, new ServiceControlEventArgs(serviceName));
 		}
@@ -338,7 +338,7 @@ namespace Windows.Services
 		{
 			if (!Win32API.NotifyBootConfigStatus(isBootAcceptable))
 			{
-				throw ServiceException.Create(MSGS_NTFY_BOOT_CNFG_STTS, Marshal.GetLastWin32Error());
+				throw ServiceException.Create(notifyBootConfigStatusMessages, Marshal.GetLastWin32Error());
 			}
 		}
 
@@ -346,7 +346,7 @@ namespace Windows.Services
 		/// Release unmanaged resources
 		/// </summary>
 		/// <param name="disposing">Value indicates if the object is disposed correctly</param>
-		protected virtual void Dispose(bool disposing)
+		private void Dispose(bool disposing)
 		{
 			if (!this.IsClosed && (this.Handle != IntPtr.Zero))
 			{
@@ -368,10 +368,8 @@ namespace Windows.Services
 			}
 		}
 
-		void IDisposable.Dispose()
-		{
+		void IDisposable.Dispose() =>
 			Close();
-		}
 
 		/// <summary>
 		/// Closes the connection to the SCM database, and releases unmanaged resources/
@@ -483,25 +481,22 @@ namespace Windows.Services
 			uint? tagId = null,
 			IEnumerable<string> dependencies = null,
 			string serviceAccount = null,
-			string password = null)
-		{
-			ThrowIfDisposed();
-
-			return Service.Create(
-				this,
-				name,
-				displayName,
-				desiredAccess,
-				type,
-				startType,
-				errorControl,
-				binaryPath,
-				loadOrderGroup,
-				tagId,
-				dependencies,
-				serviceAccount,
-				password);
-		}
+			string password = null) =>
+			GetOrThrowIfDisposed(() => 
+				Service.Create(
+					this,
+					name,
+					displayName,
+					desiredAccess,
+					type,
+					startType,
+					errorControl,
+					binaryPath,
+					loadOrderGroup,
+					tagId,
+					dependencies,
+					serviceAccount,
+					password));
 
 		private void ThrowIfDisposed()
 		{
@@ -511,15 +506,24 @@ namespace Windows.Services
 			}
 		}
 
+		private TResult GetOrThrowIfDisposed<TResult>(Func<TResult> getter)
+		{
+			if (getter == null)
+			{
+				throw new NullReferenceException(nameof(getter));
+			}
+
+			ThrowIfDisposed();
+			return getter();
+		}
+
 		/// <summary>
 		/// Retrieves the display name of the specified service.
 		/// </summary>
 		/// <param name="serviceName">The service name. This name is the same as the service's registry key name.</param>
 		/// <returns>The service's display name.</returns>
-		public unsafe string GetServiceDisplayName(string serviceName)
-		{
-			return GetServiceUniqueName(serviceName, Win32API.GetServiceDisplayName);
-		}
+		public unsafe string GetServiceDisplayName(string serviceName) =>
+			GetServiceUniqueName(serviceName, Win32API.GetServiceDisplayName);
 
 		private unsafe string GetServiceUniqueName(string inputName, GetServiceUniqueNameDelegate getServiceUniqueName)
 		{
@@ -538,26 +542,17 @@ namespace Windows.Services
 						// Including the null terminator
 						length++;
 
-						if (pOutputName == null)
-						{
-							pOutputName = (char*)Marshal.AllocHGlobal((int)(length * sizeof(char)));
-						}
-						else
-						{
-							pOutputName = (char*)Marshal.ReAllocHGlobal(
-								(IntPtr)pOutputName, 
+						pOutputName = pOutputName == null
+							? (char*)Marshal.AllocHGlobal((int)(length * sizeof(char)))
+							: (char*)Marshal.ReAllocHGlobal(
+								(IntPtr)pOutputName,
 								(IntPtr)(length * sizeof(char)));
-						}
 					}
 
-					if (getServiceUniqueName(this.Handle, inputName, pOutputName, ref length))
-					{
-						lastError = Win32API.ERROR_SUCCESS;
-					}
-					else
-					{
-						lastError = Marshal.GetLastWin32Error();
-					}
+					lastError = getServiceUniqueName(this.Handle, inputName, pOutputName, ref length)
+						? Win32API.ERROR_SUCCESS
+						: Marshal.GetLastWin32Error();
+
 				} while (lastError == Win32API.ERROR_INSUFFICIENT_BUFFER);
 
 				if (lastError != Win32API.ERROR_SUCCESS)
@@ -578,15 +573,11 @@ namespace Windows.Services
 		/// </summary>
 		/// <param name="displayName">The service display name.</param>
 		/// <returns>The service name.</returns>
-		public unsafe string GetServiceName(string displayName)
-		{
-			return GetServiceUniqueName(displayName, Win32API.GetServiceKeyName);
-		}
+		public unsafe string GetServiceName(string displayName) =>
+			GetServiceUniqueName(displayName, Win32API.GetServiceKeyName);
 
-		internal IntPtr GetServiceHandle(string serviceName)
-		{
-			return GetServiceHandle(serviceName, (ServiceAccessRights)GetDefaultAccessRights());
-		}
+		internal IntPtr GetServiceHandle(string serviceName) =>
+			GetServiceHandle(serviceName, (ServiceAccessRights)GetDefaultAccessRights());
 
 		internal IntPtr GetServiceHandle(string serviceName, ServiceAccessRights desiredAccess)
 		{
@@ -596,7 +587,7 @@ namespace Windows.Services
 
 			if (hService == IntPtr.Zero)
 			{
-				throw ServiceException.Create(MSGS_OPEN_SVC, Marshal.GetLastWin32Error());
+				throw ServiceException.Create(openServiceMessages, Marshal.GetLastWin32Error());
 			}
 
 			return hService;
@@ -607,10 +598,8 @@ namespace Windows.Services
 		/// </summary>
 		/// <param name="serviceName"></param>
 		/// <returns></returns>
-		public Service OpenService(string serviceName)
-		{
-			return OpenService(serviceName, (ServiceAccessRights)GetDefaultAccessRights());
-		}
+		public Service OpenService(string serviceName) =>
+			OpenService(serviceName, (ServiceAccessRights)GetDefaultAccessRights());
 
 		/// <summary>
 		/// Opens an existing service.
@@ -618,10 +607,8 @@ namespace Windows.Services
 		/// <param name="serviceName">The name of the service to be opened. </param>
 		/// <param name="desiredAccess">The access rights to the service.</param>
 		/// <returns>Service instance for therequested service.</returns>
-		public Service OpenService(string serviceName, ServiceAccessRights desiredAccess)
-		{
-			return new Service(this, GetServiceHandle(serviceName, desiredAccess), serviceName);
-		}
+		public Service OpenService(string serviceName, ServiceAccessRights desiredAccess) =>
+			new Service(this, GetServiceHandle(serviceName, desiredAccess), serviceName);
 
 		private uint GetDefaultAccessRights()
 		{
@@ -653,9 +640,8 @@ namespace Windows.Services
 		/// <returns>Task for the wait operation.</returns>
 		public Task<TimedResult<Notification>> WaitForNotificationAsync(
 			Notification waitFor, 
-			int millisecondsTimeout)
-		{
-			return Task.Factory.StartNew(
+			int millisecondsTimeout) =>
+			Task.Factory.StartNew(
 				() =>
 				{
 					Notification triggered;
@@ -667,7 +653,6 @@ namespace Windows.Services
 				}
 			,
 			TaskCreationOptions.LongRunning);
-		}
 
 		/// <summary>
 		/// Asynchronically waits for notification to be triggered.
@@ -677,34 +662,30 @@ namespace Windows.Services
 		/// <returns>Task for the wait operation.</returns>
 		public Task<TimedResult<Notification>> WaitForNotificationAsync(
 			Notification waitFor,
-			TimeSpan timeout)
-		{
-			return WaitForNotificationAsync(waitFor, timeout.Milliseconds);
-		}
+			TimeSpan timeout) =>
+			WaitForNotificationAsync(waitFor, timeout.Milliseconds);
 
 		/// <summary>
 		/// Asynchronically waits for notification to be triggered.
 		/// </summary>
 		/// <param name="waitFor">Flags of the notification to be waited.</param>
 		/// <returns>Task for the wait operation.</returns>
-		public async Task<Notification> WaitForNotificationAsync(Notification waitFor)
-		{
-			return (await WaitForNotificationAsync(waitFor, Timeout.Infinite)).Result;
-		}
+		public async Task<Notification> WaitForNotificationAsync(Notification waitFor) =>
+			(await WaitForNotificationAsync(waitFor, Timeout.Infinite)).Result;
 		#endregion
 	}
 
 	/// <summary>
 	/// Event args for service control manager events
 	/// </summary>
-	public class ServiceControlEventArgs : EventArgs
+	public sealed class ServiceControlEventArgs : EventArgs
 	{
 		#region Properties
 
 		/// <summary>
 		/// Gets the service name of the relevant service.
 		/// </summary>
-		public string ServiceName { get; private set; }
+		public string ServiceName { get; }
 		#endregion
 
 		#region Ctor

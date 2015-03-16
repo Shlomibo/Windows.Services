@@ -26,16 +26,20 @@ namespace Windows.Services
 		public const string ACCOUNT_NETWORK_SERVICE = @"NT AUTHORITY\NetworkService";
 		/// <summary>The LocalSystem account name.</summary>
 		public const string ACCOUNT_LOCAL_SYSTEM = @".\" + LOCAL_SYSTEM;
+		#endregion
 
-		private static readonly string[] INTERNAL_ACCOUNTS = new string[]
-		{
-			ACCOUNT_LOCAL_SERVICE,
-			ACCOUNT_NETWORK_SERVICE,
-			ACCOUNT_LOCAL_SYSTEM,
-			LOCAL_SYSTEM,
-			Environment.MachineName + @"\" + LOCAL_SYSTEM,
+		#region Fields
 
-		};
+		private static readonly HashSet<string> internalAccounts = new HashSet<string>(new[]
+			{
+				ACCOUNT_LOCAL_SERVICE,
+				ACCOUNT_NETWORK_SERVICE,
+				ACCOUNT_LOCAL_SYSTEM,
+				LOCAL_SYSTEM,
+				Environment.MachineName + @"\" + LOCAL_SYSTEM,
+
+			},
+			StringComparer.InvariantCultureIgnoreCase);
 		#endregion
 
 		#region Methods
@@ -73,8 +77,7 @@ namespace Windows.Services
 		{
 			accountName = accountName ?? "";
 
-			password = INTERNAL_ACCOUNTS.Any(winAccount =>
-					winAccount.Equals(accountName, StringComparison.InvariantCultureIgnoreCase))
+			password = internalAccounts.Contains(accountName)
 				? ""
 				: password ?? "";
 
@@ -126,10 +129,8 @@ namespace Windows.Services
 		/// This method is suppoeted only on Windows Vista and above.
 		/// For older operating systems, use WaitForState.
 		/// </remarks>
-		public bool WaitForNotification(Notification waitFor, TimeSpan timeout, out Notification triggered)
-		{
-			return WaitForNotification(waitFor, timeout.Milliseconds, out triggered);
-		}
+		public bool WaitForNotification(Notification waitFor, TimeSpan timeout, out Notification triggered) =>
+			WaitForNotification(waitFor, timeout.Milliseconds, out triggered);
 
 		/// <summary>
 		/// Blocks the thread until wanted notification is raised.
@@ -190,10 +191,8 @@ namespace Windows.Services
 		/// </remarks>
 		public Task<TimedResult<Notification>> WaitForNotificationAsync(
 			Notification waitFor,
-			TimeSpan timeout)
-		{
-			return WaitForNotificationAsync(waitFor, timeout.Milliseconds);
-		}
+			TimeSpan timeout) =>
+			WaitForNotificationAsync(waitFor, timeout.Milliseconds);
 
 		/// <summary>
 		/// Asynchronically waits for notification to be triggered.
@@ -204,10 +203,8 @@ namespace Windows.Services
 		/// This method is suppoeted only on Windows Vista and above.
 		/// For older operating systems, use WaitForStateAsync.
 		/// </remarks>
-		public async Task<Notification> WaitForNotificationAsync(Notification waitFor)
-		{
-			return (await WaitForNotificationAsync(waitFor, Timeout.Infinite)).Result;
-		}
+		public async Task<Notification> WaitForNotificationAsync(Notification waitFor) =>
+			(await WaitForNotificationAsync(waitFor, Timeout.Infinite)).Result;
 
 		private void Events_ServiceNotification(object sender, ServiceNotificationEventArgs e)
 		{
@@ -275,7 +272,8 @@ namespace Windows.Services
 					{
 						lastError = Marshal.GetLastWin32Error();
 					}
-				} while (lastError == Win32API.ERROR_INSUFFICIENT_BUFFER);
+				}
+				while (lastError == Win32API.ERROR_INSUFFICIENT_BUFFER);
 
 				if (lastError != Win32API.ERROR_SUCCESS)
 				{
@@ -492,7 +490,8 @@ namespace Windows.Services
 					{
 						lastError = Marshal.GetLastWin32Error();
 					}
-				} while (lastError == Win32API.ERROR_INSUFFICIENT_BUFFER);
+				}
+				while (lastError == Win32API.ERROR_INSUFFICIENT_BUFFER);
 
 				if (lastError != Win32API.ERROR_SUCCESS)
 				{
@@ -560,7 +559,7 @@ namespace Windows.Services
 					password,
 					displayName))
 				{
-					throw ServiceException.Create(MSGS_SET_CNFG, Marshal.GetLastWin32Error());
+					throw ServiceException.Create(setConfigMessages, Marshal.GetLastWin32Error());
 				}
 			}
 		}
@@ -571,6 +570,17 @@ namespace Windows.Services
 			{
 				throw new ObjectDisposedException(this.serviceName.Value);
 			}
+		}
+
+		internal TResult GetOrThrowIfDisposed<TResult>(Func<TResult> getter)
+		{
+			if (getter == null)
+			{
+				throw new NullReferenceException(nameof(getter));
+			}
+
+			ThrowIfDisposed();
+			return getter();
 		}
 
 		private unsafe T LoadAndGet<T>(Func<T> getFunc)
@@ -612,7 +622,7 @@ namespace Windows.Services
 
 				if (lastError != Win32API.ERROR_SUCCESS)
 				{
-					throw ServiceException.Create(MSGS_LOAD_CNFG, lastError);
+					throw ServiceException.Create(loadConfigMessages, lastError);
 				}
 
 				ServiceType type = pQSC->type;
@@ -702,7 +712,7 @@ namespace Windows.Services
 
 				if (hService == IntPtr.Zero)
 				{
-					throw ServiceException.Create(MSGS_CREATE_SERVICE, Marshal.GetLastWin32Error());
+					throw ServiceException.Create(createServiceMessages, Marshal.GetLastWin32Error());
 				}
 
 				return new Service(
@@ -758,7 +768,7 @@ namespace Windows.Services
 		/// Releases unmanaged resources.
 		/// </summary>
 		/// <param name="disposed">Value indicates if the object is disposed correctly</param>
-		protected virtual void Dispose(bool disposed)
+		private void Dispose(bool disposed)
 		{
 			Win32API.CloseServiceHandle(this.Handle);
 
@@ -779,7 +789,7 @@ namespace Windows.Services
 
 			if (!Win32API.ControlService(this.Handle, control, out status))
 			{
-				ServiceException.Create(MSGS_SEND_CTRL, Marshal.GetLastWin32Error());
+				ServiceException.Create(sendControlMessages, Marshal.GetLastWin32Error());
 			}
 
 			return new ServiceStatus(status);
@@ -809,7 +819,7 @@ namespace Windows.Services
 						Win32API.SERVICE_CONTROL_STATUS_REASON_INFO,
 						&scsrp))
 					{
-						throw ServiceException.Create(MSGS_SEND_CTRL, Marshal.GetLastWin32Error());
+						throw ServiceException.Create(sendControlMessages, Marshal.GetLastWin32Error());
 					}
 
 					return new ServiceStatus(scsrp.serviceStatus);
@@ -848,7 +858,7 @@ namespace Windows.Services
 
 			if (!Win32API.DeleteService(this.Handle))
 			{
-				throw ServiceException.Create(MSGS_DELETE_SERVICE, Marshal.GetLastWin32Error());
+				throw ServiceException.Create(deleteServiceMessages, Marshal.GetLastWin32Error());
 			}
 		}
 
@@ -916,7 +926,7 @@ namespace Windows.Services
 
 					if (!Win32API.StartService(this.Handle, (uint)count, lpszArgs))
 					{
-						throw ServiceException.Create(MSGS_START_SVC, Marshal.GetLastWin32Error());
+						throw ServiceException.Create(startServiceMessages, Marshal.GetLastWin32Error());
 					}
 				}
 			}

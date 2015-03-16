@@ -6,27 +6,28 @@ using System.Text;
 using System.Threading.Tasks;
 using Windows.Services.Interop;
 using Utilities.Extansions;
+using static Utilities.Extansions.Object.ObjectExtansions;
 
 namespace Windows.Services
 {
 	/// <summary>
 	/// Contains the name of a service in a service control manager database and information about the service.
 	/// </summary>
-	public class ServiceInfo : ServiceStatus, IEquatable<ServiceInfo>
+	public sealed class ServiceInfo : ServiceStatus, IEquatable<ServiceInfo>
 	{
 		#region Properties
 
 		/// <summary>
 		/// Gets the name of a service in the service control manager database. 
 		/// </summary>
-		public string ServiceName { get; private set; }
+		public string ServiceName { get; }
 
 		/// <summary>
 		/// Gets a display name that can be used by service control programs, such as Services in Control Panel, 
 		/// to identify the service.
 		/// </summary>
-		public string DisplayName { get; private set; }
-		internal ServiceControlManager Scm { get; private set; }
+		public string DisplayName { get; }
+		internal ServiceControlManager Scm { get; }
 		#endregion
 
 		#region Ctor
@@ -54,32 +55,26 @@ namespace Windows.Services
 		/// Returns the service associated with current information.
 		/// </summary>
 		/// <returns>The service associated with current information.</returns>
-		public Service GetService()
-		{
-			return Scm.OpenService(this.ServiceName);
-		}
+		public Service GetService() =>
+			Scm.OpenService(this.ServiceName);
 
 		/// <summary>
 		/// Returns the service associated with current information.
 		/// </summary>
 		/// <param name="desiredAccess">The desired access to the service.</param>
 		/// <returns>The service associated with current information.</returns>
-		public Service GetService(ServiceAccessRights desiredAccess)
-		{
-			return Scm.OpenService(this.ServiceName, desiredAccess);
-		}
+		public Service GetService(ServiceAccessRights desiredAccess) =>
+			Scm.OpenService(this.ServiceName, desiredAccess);
 
 		/// <summary>
 		/// Indicates whether the current object is equal to another object of the same type.
 		/// </summary>
 		/// <param name="other">An object to compare with this object.</param>
 		/// <returns>true if the current object is equal to the other parameter; otherwise, false.</returns>
-		public bool Equals(ServiceInfo other)
-		{
-			return base.Equals((ServiceStatus)other) &&
+		public bool Equals(ServiceInfo other) =>
+			base.Equals((ServiceStatus)other) &&
 				(this.ServiceName == other.ServiceName) &&
 				(this.DisplayName == other.DisplayName);
-		}
 
 		/// <summary>
 		/// Determines whether the specified object is equal to the current object.
@@ -111,7 +106,7 @@ namespace Windows.Services
 		public override int GetHashCode()
 		{
 			// TODO: write your implementation of GetHashCode() here
-			return ObjectExtansions.CreateHashCode(
+			return CreateHashCode(
 				base.GetHashCode(),
 				this.ServiceName,
 				this.DisplayName);
@@ -127,9 +122,9 @@ namespace Windows.Services
 			{
 				return true;
 			}
-			else if (object.ReferenceEquals(left, null) || object.ReferenceEquals(right, null))
+			else if (object.ReferenceEquals(left, null))
 			{
-				return false;
+				return object.ReferenceEquals(right, null);
 			}
 			else
 			{
@@ -138,10 +133,8 @@ namespace Windows.Services
 		}
 
 		/// <summary></summary><param name="left"></param><param name="right"></param><returns></returns>
-		public static bool operator !=(ServiceInfo left, ServiceInfo right)
-		{
-			return !(left == right);
-		}
+		public static bool operator !=(ServiceInfo left, ServiceInfo right) =>
+			!(left == right);
 		#endregion
 	}
 }

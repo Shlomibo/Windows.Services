@@ -10,24 +10,25 @@ namespace Windows.Services.XPCompatibility
 	/// <summary>
 	/// The lock status for SCM
 	/// </summary>
-	public class ServiceLockStatus
+	[Obsolete("WinXp is no longer supported", true)]
+	public sealed class ServiceLockStatus
 	{
 		#region Properties
 
 		/// <summary>
 		/// Gets the name of the user who acquired the lock.
 		/// </summary>
-		public string Owner { get; private set; }
+		public string Owner { get; }
 
 		/// <summary>
 		/// Gets the time since the lock was first acquired, in seconds.
 		/// </summary>
-		public int LockDuration { get; private set; }
+		public int LockDuration { get; }
 
 		/// <summary>
 		/// Gets value that indicates if the SCM database is locked.
 		/// </summary>
-		public bool IsLocked { get; private set; }
+		public bool IsLocked { get; }
 		#endregion
 
 		#region Ctor

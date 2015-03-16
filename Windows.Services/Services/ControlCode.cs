@@ -95,7 +95,7 @@ namespace Windows.Services
 
 		#region Fields
 
-		private static readonly IEnumerable<uint> ValidNotUserEvents = new uint[]
+		private static readonly ICollection<uint> ValidNotUserEvents = new HashSet<uint>(new[]
 		{
 			DEVICE_EVENT,
 			HARDWARE_PROFILE_CHANGE,
@@ -104,6 +104,17 @@ namespace Windows.Services
 			TIME_CHANGE,
 			TRIGGER_EVENT,
 			USER_MODE_REBOOT,
+		});
+
+		private static readonly IDictionary<uint, string> nameByControl = new Dictionary<uint, string>
+		{
+			[DEVICE_EVENT] = DEVICE_EVENT_NAME,
+			[HARDWARE_PROFILE_CHANGE] = HARDWARE_PROFILE_CHANGE_NAME,
+			[POWER_EVENT] = POWER_EVENT_NAME,
+			[SESSION_CHANGE] = SESSION_CHANGE_NAME,
+			[TIME_CHANGE] = TIME_CHANGE_NAME,
+			[TRIGGER_EVENT] = TRIGGER_EVENT_NAME,
+			[USER_MODE_REBOOT] = USER_MODE_REBOOT_NAME,
 		};
 
 		#region Public readonly fields
@@ -111,36 +122,24 @@ namespace Windows.Services
 		/// <summary>
 		/// Notifies a service that it should stop.
 		/// </summary>
-		public static readonly ControlCode Stop = new ControlCode
-		{
-			Code = (uint)ApplicationControl.Stop,
-		};
+		public static readonly ControlCode Stop = new ControlCode(ApplicationControl.Stop);
 
 		/// <summary>
 		/// Notifies a service that it should pause.
 		/// </summary>
-		public static readonly ControlCode Pause = new ControlCode
-		{
-			Code = (uint)ApplicationControl.Pause
-		};
+		public static readonly ControlCode Pause = new ControlCode(ApplicationControl.Pause);
 
 		/// <summary>
 		/// Notifies a paused service that it should resume.
 		/// </summary>
-		public static readonly ControlCode Continue = new ControlCode
-		{
-			Code = (uint)ApplicationControl.Continue
-		};
+		public static readonly ControlCode Continue = new ControlCode(ApplicationControl.Continue);
 
 		/// <summary>
 		/// Notifies a service to report its current status information to the service control manager.
 		/// 
 		/// The handler should simply return NO_ERROR; the SCM is aware of the current state of the service.
 		/// </summary>
-		public static readonly ControlCode Interrogate = new ControlCode
-		{
-			Code = (uint)ApplicationControl.Interrogate
-		};
+		public static readonly ControlCode Interrogate = new ControlCode(ApplicationControl.Interrogate);
 		
 		// Disabling obsolete warnings
 #pragma warning disable 612, 618
@@ -150,10 +149,7 @@ namespace Windows.Services
 		/// The service should reread its startup parameters.
 		/// </summary>
 		[Obsolete]
-		public static readonly ControlCode ParamChange = new ControlCode
-		{
-			Code = (uint)ApplicationControl.ParamChange
-		};
+		public static readonly ControlCode ParamChange = new ControlCode(ApplicationControl.ParamChange);
 
 		/// <summary>
 		/// Notifies a network service that there is a new component for binding. 
@@ -162,10 +158,7 @@ namespace Windows.Services
 		/// Applications should use Plug and Play functionality instead.
 		/// </summary>
 		[Obsolete]
-		public static readonly ControlCode NetBindAdd = new ControlCode
-		{
-			Code = (uint)ApplicationControl.NetBindAdd
-		};
+		public static readonly ControlCode NetBindAdd = new ControlCode(ApplicationControl.NetBindAdd);
 
 		/// <summary>
 		/// Notifies a network service that a component for binding has been removed. 
@@ -174,10 +167,7 @@ namespace Windows.Services
 		/// Applications should use Plug and Play functionality instead.
 		/// </summary>
 		[Obsolete]
-		public static readonly ControlCode NetBindRemove = new ControlCode
-		{
-			Code = (uint)ApplicationControl.NetBindRemove
-		};
+		public static readonly ControlCode NetBindRemove = new ControlCode(ApplicationControl.NetBindRemove);
 
 		/// <summary>
 		/// Notifies a network service that a disabled binding has been enabled. 
@@ -186,10 +176,7 @@ namespace Windows.Services
 		/// Applications should use Plug and Play functionality instead.
 		/// </summary>
 		[Obsolete]
-		public static readonly ControlCode NetBindEnable = new ControlCode
-		{
-			Code = (uint)ApplicationControl.NetBindEnable
-		};
+		public static readonly ControlCode NetBindEnable = new ControlCode(ApplicationControl.NetBindEnable);
 
 		/// <summary>
 		/// Notifies a network service that one of its bindings has been disabled. 
@@ -198,10 +185,7 @@ namespace Windows.Services
 		/// Applications should use Plug and Play functionality instead.
 		/// </summary>
 		[Obsolete]
-		public static readonly ControlCode NetBindDisable = new ControlCode
-		{
-			Code = (uint)ApplicationControl.NetBindDisable
-		};
+		public static readonly ControlCode NetBindDisable = new ControlCode(ApplicationControl.NetBindDisable);
 
 #pragma warning restore 612, 618
 
@@ -210,59 +194,38 @@ namespace Windows.Services
 		/// (The service must have registered to receive these notifications using the RegisterDeviceNotification function.) 
 		/// The dwEventType and lpEventData parameters contain additional information.
 		/// </summary>
-		public static readonly ControlCode DeviceEvent = new ControlCode
-		{
-			Code = DEVICE_EVENT
-		};
+		public static readonly ControlCode DeviceEvent = new ControlCode(DEVICE_EVENT);
 
 		/// <summary>
 		/// Notifies a service that the computer's hardware profile has changed. 
 		/// The dwEventType parameter contains additional information.
 		/// </summary>
-		public static readonly ControlCode HardwareProfileChanged = new ControlCode
-		{
-			Code = HARDWARE_PROFILE_CHANGE
-		};
+		public static readonly ControlCode HardwareProfileChanged = new ControlCode(HARDWARE_PROFILE_CHANGE);
 
 		/// <summary>
 		/// Notifies a service of system power events.
 		/// </summary>
-		public static readonly ControlCode PowerEvent = new ControlCode
-		{
-			Code = POWER_EVENT
-		};
+		public static readonly ControlCode PowerEvent = new ControlCode(POWER_EVENT);
 
 		/// <summary>
 		/// Notifies a service of session change events.
 		/// </summary>
-		public static readonly ControlCode SessionChange = new ControlCode
-		{
-			Code = SESSION_CHANGE
-		};
+		public static readonly ControlCode SessionChange = new ControlCode(SESSION_CHANGE);
 
 		/// <summary>
 		/// Notifies a service that the system time has changed.
 		/// </summary>
-		public static readonly ControlCode TimeChange = new ControlCode
-		{
-			Code = TIME_CHANGE
-		};
+		public static readonly ControlCode TimeChange = new ControlCode(TIME_CHANGE);
 
 		/// <summary>
 		/// Notifies a service registered for a service trigger event that the event has occurred.
 		/// </summary>
-		public static readonly ControlCode TriggerEvent = new ControlCode
-		{
-			Code = TRIGGER_EVENT
-		};
+		public static readonly ControlCode TriggerEvent = new ControlCode(TRIGGER_EVENT);
 
 		/// <summary>
 		/// Notifies a service that the user has initiated a reboot.
 		/// </summary>
-		public static readonly ControlCode UserModeReboot = new ControlCode
-		{
-			Code = USER_MODE_REBOOT
-		};
+		public static readonly ControlCode UserModeReboot = new ControlCode(USER_MODE_REBOOT);
 		#endregion
 		#endregion
 
@@ -271,15 +234,12 @@ namespace Windows.Services
 		/// <summary>
 		/// Gets the control code
 		/// </summary>
-		public uint Code { get; private set; }
+		public uint Code { get; }
 
 		/// <summary>
 		/// Gets a name for the control code
 		/// </summary>
-		public string Name
-		{
-			get { return ControlCode.GetName(this.Code); }
-		}
+		public string Name => ControlCode.GetName(this.Code);
 		#endregion
 
 		#region Ctor
@@ -294,7 +254,7 @@ namespace Windows.Services
 		{
 			if (!IsLegal(control))
 			{
-				throw new ArgumentException("Invalid value for eventType", "eventType");
+				throw new ArgumentException("Invalid value for eventType", nameof(control));
 			}
 
 			this.Code = control;
@@ -318,71 +278,26 @@ namespace Windows.Services
 			{
 				name = ((ApplicationControl)control).ToString();
 			}
-			else
+			else if (!nameByControl.TryGetValue(control, out name))
 			{
-				switch (control)
-				{
-					case DEVICE_EVENT:
-
-						name = DEVICE_EVENT_NAME;
-						break;
-
-					case HARDWARE_PROFILE_CHANGE:
-
-						name = HARDWARE_PROFILE_CHANGE_NAME;
-						break;
-
-					case POWER_EVENT:
-
-						name = POWER_EVENT_NAME;
-						break;
-
-					case SESSION_CHANGE:
-
-						name = SESSION_CHANGE_NAME;
-						break;
-
-					case TIME_CHANGE:
-
-						name = TIME_CHANGE_NAME;
-						break;
-
-					case TRIGGER_EVENT:
-
-						name = TRIGGER_EVENT_NAME;
-						break;
-
-					case USER_MODE_REBOOT:
-
-						name = USER_MODE_REBOOT_NAME;
-						break;
-
-					default:
-
-						name = USER_DEFINED_CONTROL_NAME;
-						break;
-				}
+				name = USER_DEFINED_CONTROL_NAME;
 			}
 
 			return name;
 		}
 
-		private bool IsLegal(uint control)
-		{
-			return ((control >= MIN_USER_EVENT) && (control <= MAX_USER_EVENT)) ||
-				ControlCode.ValidNotUserEvents.Contains(control) ||
-				(Enum.IsDefined(typeof(ApplicationControl), control) && (control != 0));
-		}
+		private bool IsLegal(uint control) =>
+			((control >= MIN_USER_EVENT) && (control <= MAX_USER_EVENT)) ||
+			ControlCode.ValidNotUserEvents.Contains(control) ||
+			(Enum.IsDefined(typeof(ApplicationControl), control) && (control != 0));
 
 		/// <summary>
 		/// Indicates whether the current object is equal to another object of the same type.
 		/// </summary>
 		/// <param name="other">An object to compare with this object.</param>
 		/// <returns>true if the current object is equal to the other parameter; otherwise, false.</returns>
-		public bool Equals(ControlCode other)
-		{
-			return this.Code == other.Code;
-		}
+		public bool Equals(ControlCode other) =>
+			this.Code == other.Code;
 
 		/// <summary>
 		/// Determines whether the specified object is equal to the current object.
@@ -391,13 +306,6 @@ namespace Windows.Services
 		/// <returns>true if the specified object is equal to the current object; otherwise, false.</returns>
 		public override bool Equals(object obj)
 		{
-			//       
-			// See the full list of guidelines at
-			//   http://go.microsoft.com/fwlink/?LinkID=85237  
-			// and also the guidance for operator== at
-			//   http://go.microsoft.com/fwlink/?LinkId=85238
-			//
-
 			if (obj == null || GetType() != obj.GetType())
 			{
 				return false;
@@ -411,53 +319,38 @@ namespace Windows.Services
 		/// Serves as the default hash function.
 		/// </summary>
 		/// <returns>A hash code for the current object.</returns>
-		public override int GetHashCode()
-		{
-			// TODO: write your implementation of GetHashCode() here
-			return this.Code.GetHashCode();
-		}
+		public override int GetHashCode() =>
+			this.Code.GetHashCode();
 
 		/// <summary>
 		/// Returns a string that represents the current object.
 		/// </summary>
 		/// <returns>A string that represents the current object.</returns>
-		public override string ToString()
-		{
-			return string.Format("{0}: {1}", this.Name, this.Code);
-		}
+		public override string ToString() =>
+			$"{this.Name}: {this.Code}";
 		#endregion
 
 		#region Operators
 
 		/// <summary></summary><param name="left"></param><param name="right"></param><returns></returns>
-		public static bool operator ==(ControlCode left, ControlCode right)
-		{
-			return left.Equals(right);
-		}
+		public static bool operator ==(ControlCode left, ControlCode right) =>
+			left.Equals(right);
 
 		/// <summary></summary><param name="left"></param><param name="right"></param><returns></returns>
-		public static bool operator !=(ControlCode left, ControlCode right)
-		{
-			return !(left == right);
-		}
+		public static bool operator !=(ControlCode left, ControlCode right) =>
+			!(left == right);
 
 		/// <summary></summary><param name="value"></param><returns></returns>
-		public static explicit operator ControlCode(uint value)
-		{
-			return new ControlCode(value);
-		}
+		public static explicit operator ControlCode(uint value) =>
+			new ControlCode(value);
 
 		/// <summary></summary><param name="value"></param><returns></returns>
-		public static implicit operator uint(ControlCode value)
-		{
-			return value.Code;
-		}
+		public static implicit operator uint(ControlCode value) =>
+			value.Code;
 
 		/// <summary></summary><param name="value"></param><returns></returns>
-		public static implicit operator ControlCode(ApplicationControl value)
-		{
-			return new ControlCode(value);
-		}
+		public static implicit operator ControlCode(ApplicationControl value) =>
+			new ControlCode(value);
 
 		/// <summary></summary><param name="value"></param><returns></returns>
 		public static explicit operator ApplicationControl(ControlCode value)

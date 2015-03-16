@@ -14,7 +14,7 @@ namespace Windows.Services
 		/// <summary>
 		/// A collection of statuses of the services in a service control manager database.
 		/// </summary>
-		public class ServiceCollection : ServiceCollectionBase
+		public sealed class ServiceCollection : ServiceCollectionBase
 		{
 			#region Fields
 
@@ -38,10 +38,7 @@ namespace Windows.Services
 			public IEnumerable<ServiceInfo> this[
 				ServiceType type,
 				StateQuery state,
-				string groupName]
-			{
-				get { return QueryServicesInumerator(type, state, groupName); }
-			}
+				string groupName] => QueryServicesInumerator(type, state, groupName);
 
 			/// <summary>
 			/// Queries for services of specific types, states, or have specific groups membership
@@ -75,20 +72,14 @@ namespace Windows.Services
 			/// <returns>An enumerable that enumerates the corresponding services' status</returns>
 			public IEnumerable<ServiceInfo> this[
 				ServiceType type,
-				StateQuery state]
-			{
-				get { return this[type, state, ALL_GROUPS]; }
-			}
+				StateQuery state] => this[type, state, ALL_GROUPS];
 
 			/// <summary>
 			/// Queries for services of specific types
 			/// </summary>
 			/// <param name="type">The type of services to be enumerated.</param>
 			/// <returns>An enumerable that enumerates the corresponding services' status</returns>
-			public IEnumerable<ServiceInfo> this[ServiceType type]
-			{
-				get { return this[type, StateQuery.All]; }
-			}
+			public IEnumerable<ServiceInfo> this[ServiceType type] =>this[type, StateQuery.All];
 
 			/// <summary>
 			/// Queries for services of specific states, or under specific groups
@@ -103,10 +94,7 @@ namespace Windows.Services
 			/// <returns>An enumerable that enumerates the corresponding services' status</returns>
 			public IEnumerable<ServiceInfo> this[
 				StateQuery state,
-				string groupName]
-			{
-				get { return this[ServiceType.All, state, groupName]; }
-			}
+				string groupName] => this[ServiceType.All, state, groupName];
 
 			/// <summary>
 			/// Queries for services of specific states, or have specific groups membership
@@ -135,10 +123,7 @@ namespace Windows.Services
 			/// </summary>
 			/// <param name="state">The state of the services to be enumerated.</param>
 			/// <returns>An enumerable that enumerates the corresponding services' status</returns>
-			public IEnumerable<ServiceInfo> this[StateQuery state]
-			{
-				get { return this[state, ALL_GROUPS]; }
-			}
+			public IEnumerable<ServiceInfo> this[StateQuery state] => this[state, ALL_GROUPS];
 
 			/// <summary>
 			/// Queries for services under specific groups
@@ -150,10 +135,7 @@ namespace Windows.Services
 			/// If this parameter is NULL, group membership is ignored and all services are enumerated.
 			/// </param>
 			/// <returns>An enumerable that enumerates the corresponding services' status</returns>
-			public IEnumerable<ServiceInfo> this[string groupName]
-			{
-				get { return this[StateQuery.All, groupName]; }
-			}
+			public IEnumerable<ServiceInfo> this[string groupName] => this[StateQuery.All, groupName];
 
 			/// <summary>
 			/// Queries for services that have specific groups membership
@@ -208,31 +190,25 @@ namespace Windows.Services
 			protected override unsafe IEnumerable<ServiceInfo> QueryServicesInumerator(
 				ServiceType type,
 				StateQuery state,
-				string groupName)
-			{
-				ThrowIfDisposed();
-				return new Enumerator(this, type, state, groupName);
-			}
+				string groupName) => 
+				GetOrThrowIfDisposed(() => 
+					new Enumerator(this, type, state, groupName));
 			#endregion
 
 			#region Enumerator
 
 			private new unsafe class Enumerator : ServiceCollectionBase.Enumerator
 			{
-				#region Consts
-
-				private static readonly Dictionary<int, string> MSGS_ENUM_ERRORS = new Dictionary<int, string>()
-				{
-					{ Win32API.ERROR_ACCESS_DENIED, "The handle does not have the SC_MANAGER_ENUMERATE_SERVICE access right." },
-					{ Win32API.ERROR_INVALID_PARAMETER, "An illegal parameter value was used." },
-					{ Win32API.ERROR_INVALID_HANDLE, "The handle is invalid." },
-					{ Win32API.ERROR_INVALID_LEVEL, "The InfoLevel parameter contains an unsupported value." },
-					{ Win32API.ERROR_SHUTDOWN_IN_PROGRESS, "The system is shutting down; this function cannot be called." },
-				};
-				#endregion
-
 				#region Fields
 
+				private static readonly Dictionary<int, string> messageByError = new Dictionary<int, string>()
+				{
+					[Win32API.ERROR_ACCESS_DENIED] = "The handle does not have the SC_MANAGER_ENUMERATE_SERVICE access right.",
+					[Win32API.ERROR_INVALID_PARAMETER] = "An illegal parameter value was used.",
+					[Win32API.ERROR_INVALID_HANDLE] = "The handle is invalid.",
+					[Win32API.ERROR_INVALID_LEVEL] = "The InfoLevel parameter contains an unsupported value.",
+					[Win32API.ERROR_SHUTDOWN_IN_PROGRESS] = "The system is shutting down; this function cannot be called.",
+				};
 
 				private uint resumeHandle = 0;
 				private ServiceCollection collection;
@@ -314,7 +290,7 @@ namespace Windows.Services
 					if ((lastError != Win32API.ERROR_SUCCESS) &&
 						(lastError != Win32API.ERROR_MORE_DATA))
 					{
-						throw ServiceException.Create(MSGS_ENUM_ERRORS, lastError);
+						throw ServiceException.Create(messageByError, lastError);
 					}
 				}
 
@@ -343,9 +319,8 @@ namespace Windows.Services
 					return haveItem;
 				}
 
-				private unsafe int EnumServiceStatus()
-				{
-					if (Win32API.EnumServicesStatus(
+				private unsafe int EnumServiceStatus() =>
+					Win32API.EnumServicesStatus(
 							this.collection.scm.Handle,
 							Win32API.SC_ENUM_PROCESS_INFO,
 							this.type,
@@ -355,15 +330,9 @@ namespace Windows.Services
 							out this.needed,
 							out this.returned,
 							ref this.resumeHandle,
-							this.groupName))
-					{
-						return NO_ERROR;
-					}
-					else
-					{
-						return Marshal.GetLastWin32Error();
-					}
-				}
+							this.groupName)
+						? NO_ERROR
+						: Marshal.GetLastWin32Error();
 
 				protected override void ThrowIfDisposed()
 				{

@@ -11,19 +11,16 @@ using Windows.Services.Interop;
 
 namespace Windows.Services
 {
-	internal unsafe class ServiceEvents : IDisposable
+	internal sealed unsafe class ServiceEvents : IDisposable
 	{
-		#region Consts
-
-		private static readonly Dictionary<int, string> MSGS_NTFY_STTS_CHNG = new Dictionary<int, string>()
-		{
-			{ Win32API.ERROR_SERVICE_MARKED_FOR_DELETE, "The handle to the service must be closed." },
-			{ Win32API.ERROR_SERVICE_NOTIFY_CLIENT_LAGGING, 
-				"Close the handle to the service control manager, and open a new handle." },
-		};
-		#endregion
-
 		#region Fields
+
+		private static readonly Dictionary<int, string> notifyStatusChangeMessages = new Dictionary<int, string>()
+		{
+			[Win32API.ERROR_SERVICE_MARKED_FOR_DELETE] = "The handle to the service must be closed.",
+			[Win32API.ERROR_SERVICE_NOTIFY_CLIENT_LAGGING] =
+				"Close the handle to the service control manager, and open a new handle.",
+		};
 
 		private ManualResetEvent waitHandle;
 		private ServiceNotify* pSN = null;
@@ -208,7 +205,7 @@ namespace Windows.Services
 						{
 							Marshal.FreeHGlobal((IntPtr)this.pSN);
 							this.pSN = null;
-							throw ServiceException.Create(MSGS_NTFY_STTS_CHNG, result);
+							throw ServiceException.Create(notifyStatusChangeMessages, result);
 						}
 					}
 				}
@@ -276,7 +273,7 @@ namespace Windows.Services
 
 		#region Event data class
 
-		private class EventData
+		private sealed class EventData
 		{
 			public MultiString ServiceNames { get; set; }
 			public ServiceStatus Status { get; set; }
@@ -285,13 +282,13 @@ namespace Windows.Services
 		#endregion
 	}
 
-	internal class ServiceNotificationEventArgs : EventArgs
+	internal sealed class ServiceNotificationEventArgs : EventArgs
 	{
 		#region Properties
 
-		public MultiString ServiceNames { get; private set; }
-		public ServiceStatus Status { get; private set; }
-		public Notification Event { get; private set; }
+		public MultiString ServiceNames { get; }
+		public ServiceStatus Status { get; }
+		public Notification Event { get; }
 		#endregion
 
 		#region Ctor

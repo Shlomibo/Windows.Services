@@ -37,15 +37,14 @@ namespace Windows.Services
 		/// <summary>
 		/// Gets the number of elements contained in the collection.
 		/// </summary>
-		public int Count
-		{
-			get { return this.Count(); }
-		}
+		public int Count => this.Count();
 
-		bool ICollection<ServiceInfo>.IsReadOnly
-		{
-			get { return true; }
-		}
+		bool ICollection<ServiceInfo>.IsReadOnly => true;
+		#endregion
+
+		#region Ctor
+
+		internal ServiceCollectionBase() { }
 		#endregion
 
 		#region Methods
@@ -54,6 +53,23 @@ namespace Windows.Services
 		/// Throws an exception if the collection is disposed.
 		/// </summary>
 		protected abstract void ThrowIfDisposed();
+
+		/// <summary>
+		/// Gets the result of 'getter' if the object isn't disposed; otherwise, throws.
+		/// </summary>
+		/// <typeparam name="TResult">The type of the returned value from getter.</typeparam>
+		/// <param name="getter">A delegate to retrieve a value.</param>
+		/// <returns>The value returned from getter.</returns>
+		protected TResult GetOrThrowIfDisposed<TResult>(Func<TResult> getter)
+		{
+			if (getter == null)
+			{
+				throw new NullReferenceException(nameof(getter));
+			}
+
+			ThrowIfDisposed();
+			return getter();
+		}
 
 		void ICollection<ServiceInfo>.Add(ServiceInfo item)
 		{
@@ -75,6 +91,21 @@ namespace Windows.Services
 		/// <param name="arrayIndex">The zero-based index in array at which copying begins.</param>
 		public void CopyTo(ServiceInfo[] array, int arrayIndex)
 		{
+			if (array == null)
+			{
+				throw new NullReferenceException(nameof(array));
+			}
+
+			if ((arrayIndex < 0) || (arrayIndex >= array.Length))
+			{
+				throw new ArgumentOutOfRangeException(nameof(arrayIndex));
+			}
+
+			if (this.Count > array.Length - arrayIndex)
+			{
+				throw new ArgumentException();
+			}
+
 			foreach (ServiceInfo service in this)
 			{
 				array[arrayIndex++] = service;
@@ -86,11 +117,9 @@ namespace Windows.Services
 		/// </summary>
 		/// <param name="service">The service status to locate in the collection.</param>
 		/// <returns>true if service status is found in the collection; otherwise, false.</returns>
-		public bool Contains(ServiceInfo service)
-		{
-			ThrowIfDisposed();
-			return (this as IEnumerable<ServiceInfo>).Contains(service);
-		}
+		public bool Contains(ServiceInfo service) =>
+			GetOrThrowIfDisposed(() =>
+				this.AsEnumerable().Contains(service));
 
 		bool ICollection<ServiceInfo>.Remove(ServiceInfo item)
 		{
@@ -101,10 +130,8 @@ namespace Windows.Services
 		/// Returns an enumerator that iterates through the collection.
 		/// </summary>
 		/// <returns>A IEnumerator&lt;ServiceInfo&gt; that can be used to iterate through the collection.</returns>
-		public IEnumerator<ServiceInfo> GetEnumerator()
-		{
-			return QueryServicesInumerator(ServiceType.All, StateQuery.All, ALL_GROUPS).GetEnumerator();
-		}
+		public IEnumerator<ServiceInfo> GetEnumerator() =>
+			QueryServicesInumerator(ServiceType.All, StateQuery.All, ALL_GROUPS).GetEnumerator();
 
 		/// <summary>
 		/// Queries for services of specific types, states, or under specific groups
@@ -123,10 +150,8 @@ namespace Windows.Services
 				StateQuery state,
 				string groupName);
 
-		IEnumerator IEnumerable.GetEnumerator()
-		{
-			return GetEnumerator();
-		}
+		IEnumerator IEnumerable.GetEnumerator() =>
+			GetEnumerator();
 		#endregion
 
 		/// <summary>
@@ -163,7 +188,7 @@ namespace Windows.Services
 			/// <summary>
 			/// Creates new instance
 			/// </summary>
-			protected Enumerator()
+			internal Enumerator()
 			{
 				Reset();
 			}
@@ -176,10 +201,7 @@ namespace Windows.Services
 			/// </summary>
 			public abstract ServiceInfo Current { get; }
 
-			object IEnumerator.Current
-			{
-				get { return this.Current; }
-			}
+			object IEnumerator.Current => this.Current;
 			#endregion
 
 			#region Ctor
@@ -201,18 +223,31 @@ namespace Windows.Services
 			protected abstract void ThrowIfDisposed();
 
 			/// <summary>
+			/// Gets the result of 'getter' if the object isn't disposed; otherwise, throws.
+			/// </summary>
+			/// <typeparam name="TResult">The type of the returned value from getter.</typeparam>
+			/// <param name="getter">A delegate to retrieve a value.</param>
+			/// <returns>The value returned from getter.</returns>
+			protected TResult GetOrThrowIfDisposed<TResult>(Func<TResult> getter)
+			{
+				if (getter == null)
+				{
+					throw new NullReferenceException(nameof(getter));
+				}
+
+				ThrowIfDisposed();
+				return getter();
+			}
+
+			/// <summary>
 			/// Returns an enumerator that iterates through the collection.
 			/// </summary>
 			/// <returns>A IEnumerator&lt;ServiceInfo&gt; that can be used to iterate through the collection.</returns>
-			public IEnumerator<ServiceInfo> GetEnumerator()
-			{
-				return this;
-			}
+			public IEnumerator<ServiceInfo> GetEnumerator() =>
+				this;
 
-			IEnumerator IEnumerable.GetEnumerator()
-			{
-				return GetEnumerator();
-			}
+			IEnumerator IEnumerable.GetEnumerator() =>
+				GetEnumerator();
 
 			/// <summary>
 			/// Disposes the enumerator
@@ -253,6 +288,5 @@ namespace Windows.Services
 			}
 			#endregion
 		}
-
 	}
 }
